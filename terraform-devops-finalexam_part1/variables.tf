@@ -1,25 +1,23 @@
 variable "aws_region" {
-  description = "AWS region to deploy to"
+  description = "AWS region to deploy the infrastructure"
   type        = string
   default     = "us-east-1"
 }
 
-variable "instance_type" {
-  description = "EC2 instance type for all instances"
+variable "key_name" {
+  description = "Name of the AWS key pair to create/use"
   type        = string
-  default     = "t3.micro"
+  default     = "finalexam-key"
 }
 
-variable "key_name" {
-  description = "Name for the AWS key pair to be created/used"
+variable "instance_type" {
+  description = "EC2 instance type for all servers"
   type        = string
-  default     = "deployer-key"
+  default     = "t3.small"
 }
 
 variable "ssh_allowed_cidr" {
-  description = "Your public IP in CIDR form to allow SSH (e.g. 1.2.3.4/32)"
+  description = "CIDR allowed to SSH into instances"
   type        = string
-  
- 
-  default     = "0.0.0.0/0"
+  default     = "0.0.0.0/0" 
 }
