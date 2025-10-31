@@ -1,14 +1,15 @@
+properties([
+  parameters([
+    string(name: 'TESTING_HOST',  defaultValue: '', description: 'IP/host of "Testing" instance'),
+    string(name: 'STAGING_HOST',  defaultValue: '', description: 'IP/host of "Staging" instance'),
+    string(name: 'PROD1_HOST',    defaultValue: '', description: 'IP/host of "Production_Env1" instance'),
+    string(name: 'PROD2_HOST',    defaultValue: '', description: 'IP/host of "Production_Env2" instance'),
+    string(name: 'REMOTE_DIR',    defaultValue: '/var/www/html', description: 'Remote web root (Apache)')
+  ])
+])
+
 pipeline {
   agent none
-
-  parameters {
-    string(name: 'TESTING_HOST',  defaultValue: '', description: 'IP/host of "Testing" instance')
-    string(name: 'STAGING_HOST',  defaultValue: '', description: 'IP/host of "Staging" instance')
-    string(name: 'PROD1_HOST',    defaultValue: '', description: 'IP/host of "Production_Env1" instance')
-    string(name: 'PROD2_HOST',    defaultValue: '', description: 'IP/host of "Production_Env2" instance')
-    string(name: 'REMOTE_DIR',    defaultValue: '/var/www/html', description: 'Remote web root (Apache)')
-  }
-
   options { timestamps() }
   triggers { githubPush() }
 
@@ -50,7 +51,6 @@ pipeline {
     }
 
     stage('Deploy to STAGING') {
-      when { succeeded() }
       agent { label 'JenkinsAgentPermanent' }
       steps {
         sh """
@@ -64,7 +64,6 @@ pipeline {
     }
 
     stage('Selenium on STAGING') {
-      when { succeeded() }
       agent { label 'JenkinsAgentDynamic' }
       steps {
         sh """
@@ -75,7 +74,6 @@ pipeline {
     }
 
     stage('Deploy to Production_Env1') {
-      when { succeeded() }
       agent { label 'JenkinsAgentPermanent' }
       steps {
         sh """
@@ -89,7 +87,6 @@ pipeline {
     }
 
     stage('Deploy to Production_Env2') {
-      when { succeeded() }
       agent { label 'JenkinsAgentPermanent' }
       steps {
         sh """
