@@ -66,7 +66,6 @@ resource "aws_security_group" "web_sg" {
   description = "Allow SSH, HTTP, and Jenkins"
   vpc_id      = aws_vpc.main.id
 
-  # SSH solo tu IP
   ingress {
     from_port   = 22
     to_port     = 22
@@ -74,7 +73,6 @@ resource "aws_security_group" "web_sg" {
     cidr_blocks = [var.ssh_allowed_cidr]
   }
 
-  # HTTP para ver la app
   ingress {
     from_port   = 80
     to_port     = 80
@@ -82,7 +80,6 @@ resource "aws_security_group" "web_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Jenkins 8080
   ingress {
     from_port   = 8080
     to_port     = 8080

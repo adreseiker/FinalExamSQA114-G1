@@ -21,5 +21,5 @@ variable "ssh_allowed_cidr" {
   type        = string
   
  
-  default     = "50.68.5.52/32"
+  default     = "0.0.0.0/0"
 }
