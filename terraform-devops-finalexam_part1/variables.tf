@@ -1,20 +1,25 @@
 variable "aws_region" {
-  type    = string
-  default = "us-east-1"
-}
-
-variable "key_name" {
-  type    = string
-  default = "deployer-key"
+  description = "AWS region to deploy to"
+  type        = string
+  default     = "us-east-1"
 }
 
 variable "instance_type" {
-  type    = string
-  default = "t3.small"
+  description = "EC2 instance type for all instances"
+  type        = string
+  default     = "t3.micro"
+}
+
+variable "key_name" {
+  description = "Name for the AWS key pair to be created/used"
+  type        = string
+  default     = "deployer-key"
 }
 
 variable "ssh_allowed_cidr" {
-  description = "Your public IP in CIDR form, e.g. 203.0.113.10/32"
+  description = "Your public IP in CIDR form to allow SSH (e.g. 1.2.3.4/32)"
   type        = string
-  default     = "YOUR_PUBLIC_IP/32"
+  
+ 
+  default     = "50.68.5.52/32"
 }

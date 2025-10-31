@@ -23,7 +23,7 @@ resource "aws_subnet" "main_a" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "finalexam-public-a"
+    Name = "finalexam-subnet-a"
   }
 }
 
@@ -34,7 +34,7 @@ resource "aws_subnet" "main_b" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "finalexam-public-b"
+    Name = "finalexam-subnet-b"
   }
 }
 
@@ -47,34 +47,26 @@ resource "aws_route_table" "public" {
   }
 
   tags = {
-    Name = "finalexam-public-rt"
+    Name = "finalexam-rtb-public"
   }
 }
 
-resource "aws_route_table_association" "public_a" {
+resource "aws_route_table_association" "main_a" {
   subnet_id      = aws_subnet.main_a.id
   route_table_id = aws_route_table.public.id
 }
 
-resource "aws_route_table_association" "public_b" {
+resource "aws_route_table_association" "main_b" {
   subnet_id      = aws_subnet.main_b.id
   route_table_id = aws_route_table.public.id
 }
 
 resource "aws_security_group" "web_sg" {
   name        = "finalexam-sg"
-  description = "Allow HTTP, Jenkins and SSH from my IP"
+  description = "Allow SSH, HTTP, and Jenkins"
   vpc_id      = aws_vpc.main.id
 
-  # HTTP for ALB / app
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # SSH only from student's IP
+  # SSH solo tu IP
   ingress {
     from_port   = 22
     to_port     = 22
@@ -82,12 +74,20 @@ resource "aws_security_group" "web_sg" {
     cidr_blocks = [var.ssh_allowed_cidr]
   }
 
-  # Jenkins UI only from student's IP
+  # HTTP para ver la app
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Jenkins 8080
   ingress {
     from_port   = 8080
     to_port     = 8080
     protocol    = "tcp"
-    cidr_blocks = [var.ssh_allowed_cidr]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
