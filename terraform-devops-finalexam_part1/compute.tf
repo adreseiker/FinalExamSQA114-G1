@@ -4,9 +4,35 @@ locals {
   }
 }
 
-# 1. Jenkins Controller (uses external install script)
+# One AMI for everything: Amazon Linux 2023 (x86_64)
+data "aws_ami" "amazon_linux_x86" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["al2023-ami-*-x86_64"]
+  }
+
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+
+  filter {
+    name   = "root-device-type"
+    values = ["ebs"]
+  }
+}
+
+# 1) Jenkins Controller – installs Jenkins
 resource "aws_instance" "jenkins_controller" {
-  ami                         = data.aws_ami.amazon_linux.id
+  ami                         = data.aws_ami.amazon_linux_x86.id
   instance_type               = var.instance_type
   subnet_id                   = aws_subnet.main_a.id
   vpc_security_group_ids      = [aws_security_group.web_sg.id]
@@ -18,9 +44,9 @@ resource "aws_instance" "jenkins_controller" {
   tags = merge(local.common_tags, { Name = "JenkinsController" })
 }
 
-# 2. Jenkins Agent (Permanent)
+# 2) Jenkins Agent (permanent) – installs java/node/git/chromium
 resource "aws_instance" "jenkins_agent_permanent" {
-  ami                         = data.aws_ami.amazon_linux.id
+  ami                         = data.aws_ami.amazon_linux_x86.id
   instance_type               = var.instance_type
   subnet_id                   = aws_subnet.main_a.id
   vpc_security_group_ids      = [aws_security_group.web_sg.id]
@@ -32,11 +58,11 @@ resource "aws_instance" "jenkins_agent_permanent" {
   tags = merge(local.common_tags, { Name = "JenkinsAgentPermanent" })
 }
 
-# 3. Jenkins Agent (Dynamic)
+# 3) Jenkins Agent (dynamic) – same agent script
 resource "aws_instance" "jenkins_agent_dynamic" {
-  ami                         = data.aws_ami.amazon_linux.id
+  ami                         = data.aws_ami.amazon_linux_x86.id
   instance_type               = var.instance_type
-  subnet_id                   = aws_subnet.main_a.id
+  subnet_id                   = aws_subnet.main_b.id
   vpc_security_group_ids      = [aws_security_group.web_sg.id]
   key_name                    = aws_key_pair.this.key_name
   associate_public_ip_address = true
@@ -46,125 +72,58 @@ resource "aws_instance" "jenkins_agent_dynamic" {
   tags = merge(local.common_tags, { Name = "JenkinsAgentDynamic" })
 }
 
-# 4. Testing (first clone happens here)
+# 4) Testing – installs Apache (so pipeline can deploy here)
 resource "aws_instance" "testing" {
-  ami                         = data.aws_ami.amazon_linux.id
-  instance_type               = var.instance_type
-  subnet_id                   = aws_subnet.main_b.id
-  vpc_security_group_ids      = [aws_security_group.web_sg.id]
-  key_name                    = aws_key_pair.this.key_name
-  associate_public_ip_address = true
-
-  user_data = <<-EOF
-    #!/bin/bash
-    dnf -y update
-    dnf -y install httpd git
-
-    systemctl enable --now httpd
-
-    cd /var/www/html
-    rm -rf ./*
-
-    # first clone (repo may still have the "playerText" bug — that's OK, Selenium will catch it)
-    git clone https://github.com/adreseiker/FinalExamSQA114-G1.git app || true
-    if [ -d app ]; then
-      cp -r app/* /var/www/html/
-    fi
-
-    echo "<h2>Testing Environment</h2>" > /var/www/html/env.html
-  EOF
-
-  tags = merge(local.common_tags, { Name = "Testing" })
-}
-
-# 5. Staging (no clone, waits for Jenkins deployment)
-resource "aws_instance" "staging" {
-  ami                         = data.aws_ami.amazon_linux.id
-  instance_type               = var.instance_type
-  subnet_id                   = aws_subnet.main_b.id
-  vpc_security_group_ids      = [aws_security_group.web_sg.id]
-  key_name                    = aws_key_pair.this.key_name
-  associate_public_ip_address = true
-
-  user_data = <<-EOF
-    #!/bin/bash
-    dnf -y update
-    dnf -y install httpd
-
-    systemctl enable --now httpd
-
-    cd /var/www/html
-    rm -rf ./*
-
-    echo "<h2>Staging - waiting for Jenkins deployment</h2>" > /var/www/html/index.html
-  EOF
-
-  tags = merge(local.common_tags, { Name = "Staging" })
-}
-
-# 6. Production Environment 1 (no clone, ALB will point here later)
-resource "aws_instance" "prod_env1" {
-  ami                         = data.aws_ami.amazon_linux.id
+  ami                         = data.aws_ami.amazon_linux_x86.id
   instance_type               = var.instance_type
   subnet_id                   = aws_subnet.main_a.id
   vpc_security_group_ids      = [aws_security_group.web_sg.id]
   key_name                    = aws_key_pair.this.key_name
   associate_public_ip_address = true
 
-  user_data = <<-EOF
-    #!/bin/bash
-    dnf -y update
-    dnf -y install httpd
+  user_data = file("${path.module}/scripts/web_install.sh")
 
-    systemctl enable --now httpd
-
-    cd /var/www/html
-    rm -rf ./*
-
-    cat > /var/www/html/index.html <<HTML
-    <h1>Production_Env1</h1>
-    <p>Waiting for Jenkins artifact...</p>
-    HTML
-  EOF
-
-  tags = merge(local.common_tags, { Name = "Production_Env1" })
+  tags = merge(local.common_tags, { Name = "Testing" })
 }
 
-# 7. Production Environment 2 (no clone)
-resource "aws_instance" "prod_env2" {
-  ami                         = data.aws_ami.amazon_linux.id
+# 5) Staging – installs Apache
+resource "aws_instance" "staging" {
+  ami                         = data.aws_ami.amazon_linux_x86.id
   instance_type               = var.instance_type
   subnet_id                   = aws_subnet.main_b.id
   vpc_security_group_ids      = [aws_security_group.web_sg.id]
   key_name                    = aws_key_pair.this.key_name
   associate_public_ip_address = true
 
-  user_data = <<-EOF
-    #!/bin/bash
-    dnf -y update
-    dnf -y install httpd
+  user_data = file("${path.module}/scripts/web_install.sh")
 
-    systemctl enable --now httpd
-
-    cd /var/www/html
-    rm -rf ./*
-
-    cat > /var/www/html/index.html <<HTML
-    <h1>Production_Env2</h1>
-    <p>Waiting for Jenkins artifact...</p>
-    HTML
-  EOF
-
-  tags = merge(local.common_tags, { Name = "Production_Env2" })
+  tags = merge(local.common_tags, { Name = "Staging" })
 }
 
-# Amazon Linux 2023 AMI
-data "aws_ami" "amazon_linux" {
-  most_recent = true
-  owners      = ["amazon"]
+# 6) Prod Env 1 – installs Apache
+resource "aws_instance" "prod_env1" {
+  ami                         = data.aws_ami.amazon_linux_x86.id
+  instance_type               = var.instance_type
+  subnet_id                   = aws_subnet.main_a.id
+  vpc_security_group_ids      = [aws_security_group.web_sg.id]
+  key_name                    = aws_key_pair.this.key_name
+  associate_public_ip_address = true
 
-  filter {
-    name   = "name"
-    values = ["al2023-ami-*-kernel-6.1-*"]
-  }
+  user_data = file("${path.module}/scripts/web_install.sh")
+
+  tags = merge(local.common_tags, { Name = "Prod_Env1" })
+}
+
+# 7) Prod Env 2 – installs Apache
+resource "aws_instance" "prod_env2" {
+  ami                         = data.aws_ami.amazon_linux_x86.id
+  instance_type               = var.instance_type
+  subnet_id                   = aws_subnet.main_b.id
+  vpc_security_group_ids      = [aws_security_group.web_sg.id]
+  key_name                    = aws_key_pair.this.key_name
+  associate_public_ip_address = true
+
+  user_data = file("${path.module}/scripts/web_install.sh")
+
+  tags = merge(local.common_tags, { Name = "Prod_Env2" })
 }
