@@ -20,6 +20,7 @@ dnf -y install chromium
 echo "[6/6] Installing chromedriver..."
 dnf -y install chromedriver || {
   echo "chromedriver package not found in repo, downloading manually..."
+  dnf -y install unzip
   cd /tmp
   CHROME_VER=$(chromium --version | awk '{print $2}' | cut -d. -f1)
   curl -LO https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VER}
