@@ -1,4 +1,3 @@
-```groovy
 properties([
   parameters([
     string(name: 'TESTING_HOST',  defaultValue: '', description: 'IP/host TESTING'),
