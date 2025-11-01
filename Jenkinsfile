@@ -1,11 +1,11 @@
 properties([
   parameters([
-    string(name: 'TESTING_HOST',  defaultValue: '', description: 'IP/host TESTING'),
-    string(name: 'STAGING_HOST',  defaultValue: '', description: 'IP/host STAGING'),
-    string(name: 'PROD1_HOST',    defaultValue: '', description: 'IP/host PRODUCTION_ENV1'),
-    string(name: 'PROD2_HOST',    defaultValue: '', description: 'IP/host PRODUCTION_ENV2'),
-    string(name: 'REMOTE_DIR',    defaultValue: '/var/www/html', description: 'Remote web dir (Apache)'),
-    string(name: 'SSH_KEY_PATH',  defaultValue: '/home/ec2-user/.ssh/finalexam.pem', description: 'SSH key created by Terraform and copied to agent')
+    string(name: 'TESTING_HOST',  defaultValue: '', description: 'IP/host de instancia TESTING'),
+    string(name: 'STAGING_HOST',  defaultValue: '', description: 'IP/host de instancia STAGING'),
+    string(name: 'PROD1_HOST',    defaultValue: '', description: 'IP/host de instancia PRODUCTION_ENV1'),
+    string(name: 'PROD2_HOST',    defaultValue: '', description: 'IP/host de instancia PRODUCTION_ENV2'),
+    string(name: 'REMOTE_DIR',    defaultValue: '/var/www/html', description: 'Directorio web remoto (Apache)'),
+    string(name: 'SSH_KEY_PATH',  defaultValue: '/home/ec2-user/.ssh/finalexam.pem', description: 'Llave SSH creada por Terraform y copiada al agente')
   ])
 ])
 
@@ -35,8 +35,7 @@ pipeline {
           if [ -z "${params.TESTING_HOST}" ]; then
             echo "TESTING_HOST is empty"; exit 1
           fi
-          scp -i ${params.SSH_KEY_PATH} -o StrictHostKeyChecking=no -r \
-            index.html js.js style.css ec2-user@${params.TESTING_HOST}:${params.REMOTE_DIR}
+          scp -i ${params.SSH_KEY_PATH} -o StrictHostKeyChecking=no -r index.html js.js style.css ec2-user@${params.TESTING_HOST}:${params.REMOTE_DIR}
         """
       }
     }
@@ -60,8 +59,7 @@ pipeline {
           if [ -z "${params.STAGING_HOST}" ]; then
             echo "STAGING_HOST is empty"; exit 1
           fi
-          scp -i ${params.SSH_KEY_PATH} -o StrictHostKeyChecking=no -r \
-            index.html js.js style.css ec2-user@${params.STAGING_HOST}:${params.REMOTE_DIR}
+          scp -i ${params.SSH_KEY_PATH} -o StrictHostKeyChecking=no -r index.html js.js style.css ec2-user@${params.STAGING_HOST}:${params.REMOTE_DIR}
         """
       }
     }
@@ -84,12 +82,7 @@ pipeline {
           if [ -z "${params.PROD1_HOST}" ]; then
             echo "PROD1_HOST is empty"; exit 1
           fi
-          # send the env-specific page
-          scp -i ${params.SSH_KEY_PATH} -o StrictHostKeyChecking=no \
-            index-prod1.html ec2-user@${params.PROD1_HOST}:${params.REMOTE_DIR}/index.html
-          # send assets
-          scp -i ${params.SSH_KEY_PATH} -o StrictHostKeyChecking=no \
-            js.js style.css ec2-user@${params.PROD1_HOST}:${params.REMOTE_DIR}
+          scp -i ${params.SSH_KEY_PATH} -o StrictHostKeyChecking=no -r index.html js.js style.css ec2-user@${params.PROD1_HOST}:${params.REMOTE_DIR}
         """
       }
     }
@@ -102,10 +95,7 @@ pipeline {
           if [ -z "${params.PROD2_HOST}" ]; then
             echo "PROD2_HOST is empty"; exit 1
           fi
-          scp -i ${params.SSH_KEY_PATH} -o StrictHostKeyChecking=no \
-            index-prod2.html ec2-user@${params.PROD2_HOST}:${params.REMOTE_DIR}/index.html
-          scp -i ${params.SSH_KEY_PATH} -o StrictHostKeyChecking=no \
-            js.js style.css ec2-user@${params.PROD2_HOST}:${params.REMOTE_DIR}
+          scp -i ${params.SSH_KEY_PATH} -o StrictHostKeyChecking=no -r index.html js.js style.css ec2-user@${params.PROD2_HOST}:${params.REMOTE_DIR}
         """
       }
     }
