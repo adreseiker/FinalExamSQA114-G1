@@ -1,3 +1,4 @@
+```groovy
 properties([
   parameters([
     string(name: 'TESTING_HOST',  defaultValue: '', description: 'IP/host TESTING'),
@@ -81,7 +82,6 @@ pipeline {
       }
     }
 
-    // ===== PROD 1 =====
     stage('Deploy to Production_Env1') {
       agent { label 'JenkinsAgentPermanent' }
       steps {
@@ -92,9 +92,9 @@ pipeline {
             echo "PROD1_HOST is empty"; exit 1
           fi
 
-          # build a PROD1 version from index.html (no extra files in repo)
+          # build PROD1 version from index.html
           cp index.html index-prod1.html
-          sed -i 's|<body onload="initialize()">|<body onload="initialize()">\\n  <p style="text-align:center;font-weight:bold;margin:8px 0;">Environment: Production_Env1</p>|' index-prod1.html
+          sed -i 's|<body onload="initialize()">|<body onload="initialize()">\\n  <p style="text-align:center;font-weight:bold;font-size:28px;margin:14px 0;">Environment: Production_Env1</p>|' index-prod1.html
 
           scp -i ${params.SSH_KEY_PATH} -o StrictHostKeyChecking=no \
             index-prod1.html ec2-user@${params.PROD1_HOST}:${params.REMOTE_DIR}/index.html
@@ -105,7 +105,6 @@ pipeline {
       }
     }
 
-    // ===== PROD 2 =====
     stage('Deploy to Production_Env2') {
       agent { label 'JenkinsAgentPermanent' }
       steps {
@@ -117,7 +116,7 @@ pipeline {
           fi
 
           cp index.html index-prod2.html
-          sed -i 's|<body onload="initialize()">|<body onload="initialize()">\\n  <p style="text-align:center;font-weight:bold;margin:8px 0;">Environment: Production_Env2</p>|' index-prod2.html
+          sed -i 's|<body onload="initialize()">|<body onload="initialize()">\\n  <p style="text-align:center;font-weight:bold;font-size:28px;margin:14px 0;">Environment: Production_Env2</p>|' index-prod2.html
 
           scp -i ${params.SSH_KEY_PATH} -o StrictHostKeyChecking=no \
             index-prod2.html ec2-user@${params.PROD2_HOST}:${params.REMOTE_DIR}/index.html
